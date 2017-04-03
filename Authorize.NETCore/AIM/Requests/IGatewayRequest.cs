@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Specialized;
+
 namespace AuthorizeNet {
     public interface IGatewayRequest {
         IGatewayRequest AddCardCode(string cardCode);

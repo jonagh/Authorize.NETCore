@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Configuration;
 using System.Net;
 using System.IO;
 using System.Diagnostics;
@@ -11,6 +10,8 @@ using System.Collections.Specialized;
 using System.Xml.Serialization;
 using System.Xml;
 using AuthorizeNet.Util;
+using System.Threading.Tasks;
+using System.Net.Http;
 
 namespace AuthorizeNet {
 
@@ -57,9 +58,10 @@ namespace AuthorizeNet {
 
             var webRequest = (HttpWebRequest)WebRequest.Create(serviceUrl);
             webRequest.Method = "POST";
-            webRequest.ContentLength = postData.Length;
+            webRequest.Headers["Content-Length"] = postData.Length.ToString();
             webRequest.ContentType = "application/x-www-form-urlencoded";
 
+            /* HACK: No timeout properties are available on WebRequest in .NET Core
             //set the http connection timeout 
             var httpConnectionTimeout = AuthorizeNet.Environment.getIntProperty(Constants.HttpConnectionTimeout);
             webRequest.Timeout = (httpConnectionTimeout != 0 ? httpConnectionTimeout : Constants.HttpConnectionDefaultTimeout);
@@ -67,15 +69,16 @@ namespace AuthorizeNet {
             //set the time out to read/write from stream
             var httpReadWriteTimeout = AuthorizeNet.Environment.getIntProperty(Constants.HttpReadWriteTimeout);
             webRequest.ReadWriteTimeout = (httpReadWriteTimeout != 0 ? httpReadWriteTimeout : Constants.HttpReadWriteDefaultTimeout);
+            */
 
             // post data is sent as a stream
-            StreamWriter myWriter = null;
-            myWriter = new StreamWriter(webRequest.GetRequestStream());
-            myWriter.Write(postData);
-            myWriter.Close();
+            using (StreamWriter myWriter = new StreamWriter(HttpUtility.GetRequestStreamAsync(webRequest).Result))
+            {
+                myWriter.Write(postData);
+            }
 
             // returned values are returned as a stream, then read into a string
-            var response = (HttpWebResponse)webRequest.GetResponse();
+            var response = (HttpWebResponse)HttpUtility.GetResponseAsync(webRequest).Result;
 
             if (response != null)
             {
@@ -93,8 +96,6 @@ namespace AuthorizeNet {
                             throw new Exception("response is too long.");
                         }
                     }
-
-                    responseStream.Close();
                 }
             }
 
@@ -121,7 +122,6 @@ namespace AuthorizeNet {
             return DecideResponse(response.Split('|'));
 		}
 
-
         /// <summary>
         /// Decides the response.
         /// </summary>
@@ -135,18 +135,5 @@ namespace AuthorizeNet {
 			
 			return new GatewayResponse (rawResponse);
 		}
-		
-		
-		class PolicyOverride : ICertificatePolicy
-		{
-
-			bool ICertificatePolicy.CheckValidationResult (ServicePoint srvPoint, System.Security.Cryptography.X509Certificates.X509Certificate cert, WebRequest request, int certificateProblem)
-			{
-				return true;
-			}
-		}
-
-
-
 	}
 }

@@ -3,7 +3,6 @@ namespace AuthorizeNet
 #pragma warning disable 1591
     using System;
 
-    [Serializable]
     public class Merchant {
 
 	    public const string CpVersion = "1.0";	// card present version

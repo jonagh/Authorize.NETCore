@@ -57,8 +57,9 @@ namespace AuthorizeNet {
             HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(_serviceUrl);
             webRequest.Method = "POST";
             webRequest.ContentType = "text/xml";
-            webRequest.KeepAlive = true;
+            webRequest.Headers["Connection"] = "keep-alive";
 
+            /* HACK: No timeout properties are available on WebRequest in .NET Core
             //set the http connection timeout 
             var httpConnectionTimeout = AuthorizeNet.Environment.getIntProperty(Constants.HttpConnectionTimeout);
             webRequest.Timeout = (httpConnectionTimeout != 0 ? httpConnectionTimeout : Constants.HttpConnectionDefaultTimeout);
@@ -66,21 +67,22 @@ namespace AuthorizeNet {
             //set the time out to read/write from stream
             var httpReadWriteTimeout = AuthorizeNet.Environment.getIntProperty(Constants.HttpReadWriteTimeout);
             webRequest.ReadWriteTimeout = (httpReadWriteTimeout != 0 ? httpReadWriteTimeout : Constants.HttpReadWriteDefaultTimeout);
+            */
 
             // Serialize the request
             var type = apiRequest.GetType();
             var serializer = new XmlSerializer(type);
-            XmlWriter writer = new XmlTextWriter(webRequest.GetRequestStream(), Encoding.UTF8);
-            serializer.Serialize(writer, apiRequest);
-            writer.Close();
+            using (XmlWriter writer = XmlWriter.Create(HttpUtility.GetRequestStreamAsync(webRequest).Result, new XmlWriterSettings { Encoding = Encoding.UTF8 }))
+            {
+                serializer.Serialize(writer, apiRequest);
+            }
 
             // Get the response
-            WebResponse webResponse = webRequest.GetResponse();
+            WebResponse webResponse = HttpUtility.GetResponseAsync(webRequest).Result;
 
             // Load the response from the API server into an XmlDocument.
             var xmlDoc = new XmlDocument();
             xmlDoc.Load(XmlReader.Create(webResponse.GetResponseStream(), new XmlReaderSettings()));
-
 
             var response = DecideResponse(xmlDoc);
             CheckForErrors(response, xmlDoc);
@@ -89,15 +91,20 @@ namespace AuthorizeNet {
 
         string Serialize(object apiRequest) {
             // Serialize the request
-            var result = "";
-            using (var stream = new MemoryStream()) {
+            using (var stream = new MemoryStream())
+            {
                 var serializer = new XmlSerializer(apiRequest.GetType());
-                var writer = new XmlTextWriter(stream, Encoding.UTF8);
-                serializer.Serialize(writer, apiRequest);
-                writer.Close();
-                result = Encoding.UTF8.GetString(stream.GetBuffer());
+                using (var writer = XmlWriter.Create(stream, new XmlWriterSettings { Encoding = Encoding.UTF8 }))
+                {
+                    serializer.Serialize(writer, apiRequest);
+                }
+
+                ArraySegment<byte> buffer;
+                if (stream.TryGetBuffer(out buffer))
+                    return Encoding.UTF8.GetString(buffer.Array);
+                else
+                    return "";
             }
-            return result;
         }
 
         void CheckForErrors(ANetApiResponse response, XmlDocument xmlDoc) {

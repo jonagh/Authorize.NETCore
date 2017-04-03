@@ -25,9 +25,6 @@ namespace AuthorizeNet {
     }
     public class CardPresentAuthorizationRequest:GatewayRequest {
 
-        string _track1 = "";
-        string _track2 = "";
-
         /// <summary>
         /// Initializes a new instance of the <see cref="CardPresentAuthorizationRequest"/> class using track data from a card reader.
         /// </summary>

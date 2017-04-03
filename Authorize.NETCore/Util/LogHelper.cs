@@ -2,6 +2,7 @@ namespace AuthorizeNet.Util
 {
     using System;
     using System.Globalization;
+    using Microsoft.Extensions.Logging;
 
     /// <summary>
     /// 
@@ -45,10 +46,16 @@ namespace AuthorizeNet.Util
 
     public class Log
     {
-        public void error(string logMessage) { System.Diagnostics.Trace.WriteLine(logMessage); }
-        public void info(string logMessage)  { System.Diagnostics.Trace.WriteLine(logMessage); }
-        public void debug(string logMessage) { System.Diagnostics.Trace.WriteLine(logMessage); }
-        public void warn(string logMessage)  { System.Diagnostics.Trace.WriteLine(logMessage); }
+        private ILogger logger;
+        public Log(ILogger logger)
+        {
+            this.logger = logger;
+        }
+
+        public void error(string logMessage) { logger.LogError(logMessage); }
+        public void info(string logMessage)  { logger.LogInformation(logMessage); }
+        public void debug(string logMessage) { logger.LogDebug(logMessage); }
+        public void warn(string logMessage)  { logger.LogWarning(logMessage); }
 
         public void error(object logMessage) { error(logMessage.ToString()); }
         public void info(object logMessage)  { info(logMessage.ToString());  }
@@ -58,10 +65,11 @@ namespace AuthorizeNet.Util
 
     public class LogFactory
     {
-        private static readonly Log Logger = new Log();
+        private static ILoggerFactory factory = new LoggerFactory();
+
         public static Log getLog(Type classType)
         {
-            return Logger;
+            return new Util.Log(LoggerFactoryExtensions.CreateLogger(factory, classType));
         }
     }
 }

@@ -4,6 +4,7 @@ namespace AuthorizeNet.Util
     using System.IO;
     using System.Net;
     using System.Text;
+    using System.Threading.Tasks;
     using System.Xml;
     using System.Xml.Serialization;
     using AuthorizeNet.Api.Contracts.V1;
@@ -20,6 +21,33 @@ namespace AuthorizeNet.Util
         static readonly bool UseProxy = AuthorizeNet.Environment.getBooleanProperty(Constants.HttpsUseProxy);
         static readonly String ProxyHost = AuthorizeNet.Environment.GetProperty(Constants.HttpsProxyHost);
         static readonly int ProxyPort = AuthorizeNet.Environment.getIntProperty(Constants.HttpsProxyPort);
+
+        public class WebProxy : IWebProxy
+        {
+            public WebProxy(string proxyUri)
+                : this(new Uri(proxyUri))
+            {
+            }
+
+            public WebProxy(Uri proxyUri)
+            {
+                this.ProxyUri = proxyUri;
+            }
+
+            public Uri ProxyUri { get; set; }
+
+            public ICredentials Credentials { get; set; }
+
+            public Uri GetProxy(Uri destination)
+            {
+                return this.ProxyUri;
+            }
+
+            public bool IsBypassed(Uri host)
+            {
+                return false; /* Proxy all requests */
+            }
+        }
 
         private static Uri GetPostUrl(AuthorizeNet.Environment env) 
 	    {
@@ -45,9 +73,10 @@ namespace AuthorizeNet.Util
             var webRequest = (HttpWebRequest) WebRequest.Create(postUrl);
             webRequest.Method = "POST";
             webRequest.ContentType = "text/xml";
-            webRequest.KeepAlive = true;
+            webRequest.Headers["Connection"] = "keep-alive";
             webRequest.Proxy = SetProxyIfRequested(webRequest.Proxy);
 
+            /* HACK: No timeout properties are available on WebRequest in .NET Core
             //set the http connection timeout 
             var httpConnectionTimeout = AuthorizeNet.Environment.getIntProperty(Constants.HttpConnectionTimeout);
             webRequest.Timeout = (httpConnectionTimeout != 0 ? httpConnectionTimeout : Constants.HttpConnectionDefaultTimeout);
@@ -55,10 +84,11 @@ namespace AuthorizeNet.Util
             //set the time out to read/write from stream
             var httpReadWriteTimeout = AuthorizeNet.Environment.getIntProperty(Constants.HttpReadWriteTimeout);
             webRequest.ReadWriteTimeout = (httpReadWriteTimeout != 0 ? httpReadWriteTimeout : Constants.HttpReadWriteDefaultTimeout);
+            */
 
             var requestType = typeof (TQ);
             var serializer = new XmlSerializer(requestType);
-            using (var writer = new XmlTextWriter(webRequest.GetRequestStream(), Encoding.UTF8))
+            using (var writer = XmlWriter.Create(HttpUtility.GetRequestStreamAsync(webRequest).Result, new XmlWriterSettings { Encoding = Encoding.UTF8 }))
 	        {
 	            serializer.Serialize(writer, request);
 	        }
@@ -66,7 +96,7 @@ namespace AuthorizeNet.Util
             // Get the response
             String responseAsString = null;
             Logger.debug(string.Format("Retreiving Response from Url: '{0}'", postUrl));
-            using (var webResponse = webRequest.GetResponse())
+            using (var webResponse = HttpUtility.GetResponseAsync(webRequest).Result)
             {
                 Logger.debug(string.Format("Received Response: '{0}'", webResponse));
 
@@ -155,10 +185,20 @@ namespace AuthorizeNet.Util
                     newProxy = new WebProxy(proxyUri);
                 }
 
+                /* HACK: these properties aren't part of IWebProxy in .NET Core
                 newProxy.UseDefaultCredentials = true;
                 newProxy.BypassProxyOnLocal = true;
+                */
             }
             return (newProxy ?? proxy);
+        }
+        public static async Task<Stream> GetRequestStreamAsync(WebRequest request)
+        {
+            return await request.GetRequestStreamAsync().ConfigureAwait(false);
+        }
+        public static async Task<WebResponse> GetResponseAsync(WebRequest request)
+        {
+            return await request.GetResponseAsync().ConfigureAwait(false);
         }
     }
 

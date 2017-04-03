@@ -3,18 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Collections.Specialized;
-using System.Web;
 
 namespace AuthorizeNet {
     public class SIMResponse : AuthorizeNet.IGatewayResponse {
 
         NameValueCollection _post;
-        string _merchantHash;
+
         public SIMResponse(NameValueCollection post) {
             _post = post;
         }
-
-        public SIMResponse() : this(HttpContext.Current.Request.Form) { }
 
         public string MD5Hash {
             get {

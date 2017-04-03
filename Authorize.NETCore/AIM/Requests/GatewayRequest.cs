@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Web;
 using System.IO;
 using System.Net;
 using System.Text.RegularExpressions;
@@ -181,7 +180,7 @@ namespace AuthorizeNet {
                     // Make sure that the value is encoded before appending
                     _post.Append(key);
                     _post.Append("=");
-                    _post.Append(HttpUtility.UrlEncode(values[j]));
+                    _post.Append(WebUtility.UrlEncode(values[j]));
                 }
             }
 
@@ -255,9 +254,7 @@ namespace AuthorizeNet {
         /// </summary>
         /// <returns></returns>
         public IGatewayRequest AddFraudCheck() {
-            if(HttpContext.Current != null)
-                this.CustomerIp = HttpContext.Current.Request.UserHostAddress;
-            return this;
+            throw new NotImplementedException("Use AddFraudeCheck(ip) instead.");
         }
 
 

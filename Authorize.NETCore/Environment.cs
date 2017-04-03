@@ -1,7 +1,6 @@
-namespace AuthorizeNet 
+namespace AuthorizeNet
 {
     using System;
-    using System.Configuration;
     using System.Linq;
 
     /*================================================================================
@@ -127,18 +126,8 @@ namespace AuthorizeNet
 	    public static String GetProperty(String propertyName) {
 		    String stringValue = null;
 
-	        String propValue = null;
-            if ( ConfigurationManager.AppSettings.AllKeys.Contains(propertyName))
-	        {
-	            propValue = ConfigurationManager.AppSettings[propertyName];
-	        }
-
             var envValue = System.Environment.GetEnvironmentVariable(propertyName);
-		    if ( null != propValue && propValue.Trim().Length > 0 )
-		    {
-			    stringValue = propValue;
-		    }
-		    else if ( null != envValue && envValue.Trim().Length > 0 )
+		    if ( null != envValue && envValue.Trim().Length > 0 )
 		    {
 			    stringValue = envValue;
 		    }
