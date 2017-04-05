@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+    <metadata>
+        <id>AuthorizeNetCore</id>
+        <version>1.9.1</version>
+        <title>AuthorizeNet</title>
+        <authors>Authorize.Net</authors>
+        <owners>AuthorizeNet</owners>
+        <licenseUrl>https://github.com/AuthorizeNet/sdk-dotnet/blob/master/license.txt</licenseUrl>
+        <projectUrl>https://github.com/AuthorizeNet/sdk-dotnet</projectUrl>
+        <iconUrl>http://developer.authorize.net/resources/images/favicon.ico</iconUrl>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>Use this SDK to integrate with the Authorize.Net AIM, SIM, ARB and CIM APIs for Payment Transactions, Recurring Billing and Customer Payment Profiles.</description>
+        <summary>Authorize.Net SDK for .Net</summary>
+        <tags>Payments API Authorize.Net</tags>
+    </metadata>
+    <files>
+      <file src="bin\Release\netstandard1.6\Authorize.NETCore.dll" target="lib\netstandard1.6\Authorize.NETCore.dll" />
+	    <file src="bin\Release\netstandard1.6\Authorize.NETCore.pdb" target="lib\netstandard1.6\Authorize.NETCore.pdb" />
+      <file src="bin\Release\netstandard1.6\Authorize.NETCore.deps.json" target="lib\netstandard1.6\Authorize.NETCore.deps.json" />
+    </files>
+</package>
